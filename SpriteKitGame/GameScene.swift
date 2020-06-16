@@ -16,7 +16,7 @@ class GameScene: SKScene {
     var dt:TimeInterval = 0
     var zombieMovePointPerSecond:CGFloat = 500.00
     var velocity:CGPoint = .zero
-    
+    let zombieAnimation:SKAction
     let playableRect:CGRect
     
     //to stop the moving of zombie challange 2 chapter 2
@@ -33,6 +33,20 @@ class GameScene: SKScene {
                               y:playableMargin,
                               width: size.width,
                               height: playableHeight)
+        
+        //init zombie animation
+        
+        var textures:[SKTexture] = []
+        for i in  1...4
+        {
+            textures.append(SKTexture(imageNamed: "zombie\(i)"))
+        }
+        
+        textures.append(textures[2])
+        textures.append(textures[1])
+        
+        zombieAnimation = SKAction.animate(with:textures,
+                                           timePerFrame:  0.1)
         
         super.init(size:size)
         
@@ -53,7 +67,11 @@ class GameScene: SKScene {
         
         zombie.position = CGPoint(x: 400, y: 400)
         addChild(zombie)
-        spawnEnemy()
+    
+        run(SKAction.repeatForever(SKAction.sequence([SKAction.run {
+            [weak self] in self?.spawnEnemy()
+            }, SKAction.wait(forDuration: 2.0)])))
+        zombie.run(SKAction.repeatForever(zombieAnimation))
         debugDrawPlayableArea()
         
       
@@ -204,32 +222,23 @@ class GameScene: SKScene {
         //let actionMove = SKAction.move(to: CGPoint(x:-enemy.size.width,y:enemy.position.y), duration: 2.0)
         
         let actionMidMove = SKAction.move(to: CGPoint(x:size.width/2,
-                                                      y:enemy.size.height/2),
+                                                      y:CGFloat.random(min: playableRect.minY + enemy.size.height/2,
+                                                                       max: playableRect.maxY - enemy.size.height/2)),
                                           duration: 2.0)
         
-        let actionMove = SKAction.move(to:CGPoint(x:-enemy.size.width/2,
-                                                  y:enemy.position.y),
+        
+        let actionMove = SKAction.moveTo(x:-enemy.size.width/2,
                                        duration: 2.0)
+        
         
         let wait = SKAction.wait(forDuration: 0.5)
         
-        let logMessae = SKAction.run(){
-            print("bottom reached. ")
-        }
+       
+        let removeAction = SKAction.removeFromParent()
         
-        let goCenter = SKAction.move(to: CGPoint(x:size.width/2,
-                                                 y: size.height/2), duration: 0.5)
-        let goBack = SKAction.move(to: CGPoint(x:size.width/2,
-                                               y: 0), duration: 0.5)
-        
-        //backwards
-        
-        
-        let actionHome = SKAction.move(to: CGPoint(x:size.width + enemy.size.width/2,
-        y:size.height/2), duration: 2.0)
-        
-        let sequence = SKAction.sequence([actionMidMove, logMessae,  wait, goCenter, goBack,  actionMove, wait , actionMidMove,goCenter, goBack,  actionHome])
-        enemy.run(SKAction.repeatForever(sequence))
+        let sequence = SKAction.sequence([actionMidMove,  wait,   actionMove, removeAction])
+       
+        enemy.run(sequence)
         
     }
 }
